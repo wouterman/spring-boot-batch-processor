@@ -33,7 +33,6 @@ public class RegularRegistrationProcessor implements RegistrationProcessor {
     ProcessingResult result = new ProcessingResult();
     List<Registration> toPersist = new ArrayList<>();
     List<String> lines = Files.readAllLines(filePath);
-    long count = 0;
     for(String line : lines) {
       Registration registration = parser.fromString(line);
       boolean duplicate = repository.existsByCodeAndModificationDate(registration.getCode(), registration.getModificationDate());
@@ -43,10 +42,6 @@ public class RegularRegistrationProcessor implements RegistrationProcessor {
       } else {
         result.incrementDuplicates();
       }
-      if (count % 100_000 == 0) {
-        log.info("Processed {} registrations.", count);
-      }
-      count++;
     }
     repository.saveAll(toPersist);
     return result;
