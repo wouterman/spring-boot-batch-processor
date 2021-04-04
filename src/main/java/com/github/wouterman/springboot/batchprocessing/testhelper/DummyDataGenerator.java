@@ -1,7 +1,6 @@
 package com.github.wouterman.springboot.batchprocessing.testhelper;
 
 import com.github.wouterman.springboot.batchprocessing.model.RegistrationType;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;

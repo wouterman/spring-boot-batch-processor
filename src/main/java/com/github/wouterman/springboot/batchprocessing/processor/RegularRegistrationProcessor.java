@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
-@Component("regularRegistrationProcessor")
+@Component
 public class RegularRegistrationProcessor implements RegistrationProcessor {
 
   private final RegistrationParser parser;
@@ -43,6 +43,7 @@ public class RegularRegistrationProcessor implements RegistrationProcessor {
         result.incrementDuplicates();
       }
     }
+    log.info("Starting saveAll operation.");
     repository.saveAll(toPersist);
     return result;
   }

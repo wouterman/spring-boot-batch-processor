@@ -1,12 +1,13 @@
 package com.github.wouterman.springboot.batchprocessing;
 
 import com.github.wouterman.springboot.batchprocessing.model.ProcessingResult;
+import com.github.wouterman.springboot.batchprocessing.processor.HashMapRegistrationProcessor;
 import com.github.wouterman.springboot.batchprocessing.processor.RegistrationProcessor;
+import com.github.wouterman.springboot.batchprocessing.processor.RegularRegistrationProcessor;
 import com.github.wouterman.springboot.batchprocessing.repository.RegistrationRepository;
 import com.github.wouterman.springboot.batchprocessing.testhelper.DummyDataGenerator;
 import java.nio.file.Path;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +23,7 @@ public class BatchProcessingConfiguration {
   @Bean
   public CommandLineRunner useRegularRegistrationProcessor(
       DummyDataGenerator dummyDataGenerator,
-      @Qualifier("regularRegistrationProcessor") RegistrationProcessor processor) {
+      RegularRegistrationProcessor processor) {
     return args -> {
       log.info("Processing registrations using REGULAR processor.");
       log.info("Starting first run WITHOUT duplicates.");
@@ -36,7 +37,7 @@ public class BatchProcessingConfiguration {
   @Bean
   public CommandLineRunner useHashMapRegistrationProcessor(
       DummyDataGenerator dummyDataGenerator,
-      @Qualifier("hashMapRegistrationProcessor") RegistrationProcessor processor,
+      HashMapRegistrationProcessor processor,
       RegistrationRepository repository) {
     return args -> {
       log.info("Processing registrations using HASHMAP processor.");
@@ -49,18 +50,18 @@ public class BatchProcessingConfiguration {
   }
 
   private void doRun(DummyDataGenerator dummyDataGenerator,
-      @Qualifier("regularRegistrationProcessor") RegistrationProcessor processor,
+      RegistrationProcessor processor,
       boolean randomize) {
-    Path secondFilePath = dummyDataGenerator
+    Path filePath = dummyDataGenerator
         .generateDummyDataFile(REGISTRATIONS_TO_GENERATE, randomize);
     log.info("Generated file. Starting processing.");
-    long secondStartTime = System.nanoTime();
-    ProcessingResult secondResult = processor.process(secondFilePath);
-    long secondEndTime = System.nanoTime();
+    long startTime = System.nanoTime();
+    ProcessingResult result = processor.process(filePath);
+    long endTime = System.nanoTime();
     log.info("Results: ");
-    log.info("Processing took {} ms.", (secondEndTime - secondStartTime) / 1_000_000);
-    log.info("Added {} new registrations.", secondResult.getAdded());
-    log.info("Counted {} duplicates.", secondResult.getDuplicates());
+    log.info("Processing took {} ms.", (endTime - startTime) / 1_000_000);
+    log.info("Added {} new registrations.", result.getAdded());
+    log.info("Counted {} duplicates.", result.getDuplicates());
   }
 
 

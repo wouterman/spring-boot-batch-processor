@@ -7,13 +7,11 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 
 @Data
 @NoArgsConstructor
@@ -24,18 +22,10 @@ public class Registration {
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "hilo")
-  @GenericGenerator(name = "hilo",
-      strategy = "org.hibernate.id.enhanced.SequenceStyleGenerator",
-      parameters = {
-          @Parameter(name = "sequence_name", value = "hilo_sequence"),
-          @Parameter(name = "initial_value", value = "1"),
-          @Parameter(name = "increment_size", value = "10"),
-          @Parameter(name = "optimizer", value = "hilo")
-      })
-  @EqualsAndHashCode.Include
+  @SequenceGenerator(name = "hilo", sequenceName = "hilo", allocationSize = 100_000)
   private Long id;
   @Column(name = "code")
-  private int code;
+  private String code;
   @Column(name = "creation_timestamp")
   private LocalDateTime creationTimestamp;
   @Column(name = "modification_date")
@@ -48,4 +38,11 @@ public class Registration {
   private String telephone;
   @Column(name = "type")
   private RegistrationType type;
+
+  public interface RegistrationView {
+
+    String getCode();
+
+    LocalDate getModificationDate();
+  }
 }

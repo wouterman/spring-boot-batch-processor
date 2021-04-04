@@ -12,7 +12,7 @@ public class RegistrationParser {
   public Registration fromString(String string) {
     String[] split = string.split(" ");
     return new Registration(null,
-        Integer.parseInt(split[0]),
+        split[0],
         LocalDateTime.parse(split[1]),
         LocalDate.parse(split[2]),
         split[3],

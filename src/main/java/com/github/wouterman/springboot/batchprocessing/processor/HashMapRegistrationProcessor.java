@@ -2,22 +2,25 @@ package com.github.wouterman.springboot.batchprocessing.processor;
 
 import com.github.wouterman.springboot.batchprocessing.model.ProcessingResult;
 import com.github.wouterman.springboot.batchprocessing.model.Registration;
+import com.github.wouterman.springboot.batchprocessing.model.Registration.RegistrationView;
 import com.github.wouterman.springboot.batchprocessing.repository.RegistrationRepository;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.transaction.Transactional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@Component("hashMapRegistrationProcessor")
+@Component
 public class HashMapRegistrationProcessor implements RegistrationProcessor {
 
   private final RegistrationParser parser;
@@ -36,21 +39,27 @@ public class HashMapRegistrationProcessor implements RegistrationProcessor {
   public ProcessingResult process(Path filePath) {
     ProcessingResult result = new ProcessingResult();
     List<String> lines = Files.readAllLines(filePath);
-    Map<Integer, Registration> registrations = lines
+    Map<String, Registration> registrations = lines
         .stream()
         .map(parser::fromString)
         .collect(Collectors.toMap(Registration::getCode, registration -> registration));
-    Pageable pageable = PageRequest.of(0, 100_000);
-    Page<Registration> allRegistrations = repository.findAll(pageable);
-    allRegistrations.stream().forEach(persisted -> {
-      Registration duplicate = registrations.get(persisted.getCode());
-      if(duplicate != null
-          && persisted.getModificationDate().equals(duplicate.getModificationDate())) {
-          registrations.remove(persisted.getCode());
+
+    Pageable pageRequest = PageRequest.of(0, 1_000_000, Sort.by(Direction.ASC, "code"));
+    Page<RegistrationView> allRegistrations = repository.findAllProjectedBy(pageRequest);
+    while (!allRegistrations.isEmpty()) {
+      pageRequest = pageRequest.next();
+      allRegistrations.forEach(persisted -> {
+        Registration duplicate = registrations.get(persisted.getCode());
+        if (duplicate != null
+            && persisted.getModificationDate().equals(duplicate.getModificationDate())) {
+          registrations.remove(duplicate.getCode());
           result.incrementDuplicates();
         }
       });
+      allRegistrations = repository.findAllProjectedBy(pageRequest);
+    }
     registrations.values().forEach(registration -> result.incrementAdded());
+    log.info("Starting saveAll operation.");
     repository.saveAll(registrations.values());
     return result;
   }
